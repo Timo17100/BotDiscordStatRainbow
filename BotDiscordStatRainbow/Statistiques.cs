@@ -24,7 +24,7 @@ namespace BotDiscordStatRainbow
                 var embed = new DiscordEmbed
                 {
                     Title = "Erreur " + erreur.errors[0].code,
-                    Description = "Le bot a rencontré une erreur : "+ erreur.errors[0].detail,
+                    Description = "Le bot a rencontré une erreur : test "+ erreur.errors[0].detail,
                     Color = 0x96211D,
                 };
                 return embed;
