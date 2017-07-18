@@ -33,8 +33,8 @@ namespace BotDiscordStatRainbow
             else
             {
                 var stats = JsonConvert.DeserializeObject<StatsRoot>(reponse.Content);
-                DateTime d2 = DateTime.SpecifyKind(DateTime.Parse(stats.player.updated_at, null, System.Globalization.DateTimeStyles.RoundtripKind), DateTimeKind.Utc);
-                DateTime dt = d2.ToLocalTime();
+                DateTime dt = DateTime.SpecifyKind(DateTime.Parse(stats.player.updated_at, null, System.Globalization.DateTimeStyles.RoundtripKind), DateTimeKind.Utc);
+                //DateTime dt = d2.ToLocalTime();
                 var headshotsRatio = Math.Round(((float)stats.player.stats.overall.headshots / ((float)stats.player.stats.ranked.kills + (float)stats.player.stats.casual.kills)), 3);
                 var precision = Math.Round(((float)stats.player.stats.overall.bullets_hit / (float)stats.player.stats.overall.bullets_fired), 3);
                 var distance = Math.Round(((stats.player.stats.overall.steps_moved / 1.31233595801) / 1000), 2);
@@ -69,7 +69,7 @@ namespace BotDiscordStatRainbow
                     Footer = new DiscordEmbedFooter
                     {
                         IconUrl = "https://cdn4.iconfinder.com/data/icons/tupix-1/30/graph-512.png",
-                        Text = "Derniere mise à jour : " + dt
+                        Text = "Derniere mise à jour : " + dt + " UTC0"
 
                     }
                 };
