@@ -38,6 +38,20 @@ namespace BotDiscordStatRainbow
 
             await ctx.RespondAsync("", embed: stats.GetComparatif(username1,username2,plateforme));
         }
+
+        [Command("regionID")]
+        [Description("commande de test region ID")]
+
+        public async Task regionID(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+
+            var test = ctx.Guild.GetVoiceRegionsAsync().Id;
+
+            
+
+            await ctx.RespondAsync(test.ToString());
+        }
     }
 }
 //stats.GetStats(username, plateforme)
