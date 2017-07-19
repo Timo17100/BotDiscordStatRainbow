@@ -28,7 +28,7 @@ namespace BotDiscordStatRainbow
         [Command("comparer")]
         [Description("Comparer deux joueurs")]
 
-        public async Task Comparatif(CommandContext ctx, [Description("Joueur 1")] string username1, [Description("Joueur 2")] string username2, [Description("Plateforme de jeu : uplay,xone,ps4")] string plateforme)
+        public async Task Comparatif(CommandContext ctx, [Description("Plateforme de jeu : uplay,xone,ps4")] string plateforme, [Description("Nom des joueurs à comparer")] params string[] usernames)
         {
             await ctx.TriggerTypingAsync();
 
@@ -36,21 +36,7 @@ namespace BotDiscordStatRainbow
 
 
 
-            await ctx.RespondAsync("", embed: stats.GetComparatif(username1,username2,plateforme));
-        }
-
-        [Command("regionID")]
-        [Description("commande de test region ID")]
-
-        public async Task regionID(CommandContext ctx)
-        {
-            await ctx.TriggerTypingAsync();
-
-            var test = ctx.Guild.GetVoiceRegionsAsync().Id;
-
-            
-
-            await ctx.RespondAsync(test.ToString());
+            await ctx.RespondAsync("", embed: stats.GetComparatifRanked(usernames,plateforme));
         }
     }
 }

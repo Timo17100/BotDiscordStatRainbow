@@ -38,6 +38,9 @@ namespace BotDiscordStatRainbow
                 var headshotsRatio = Math.Round(((float)stats.player.stats.overall.headshots / ((float)stats.player.stats.ranked.kills + (float)stats.player.stats.casual.kills)), 3);
                 var precision = Math.Round(((float)stats.player.stats.overall.bullets_hit / (float)stats.player.stats.overall.bullets_fired), 3);
                 var distance = Math.Round(((stats.player.stats.overall.steps_moved / 1.31233595801) / 1000), 2);
+
+                var tempsRanked = Math.Round(((float)stats.player.stats.ranked.playtime / 3600), 2);
+                var tempsCasual = Math.Round(((float)stats.player.stats.casual.playtime / 3600), 2);
                 var embed = new DiscordEmbed
                 {
                     Title = "R6Stats",
@@ -48,21 +51,21 @@ namespace BotDiscordStatRainbow
                         new DiscordEmbedField
                         {
                             Name = "Ranked",
-                            Value = "__w/l Ratio__ : " + "*" + stats.player.stats.ranked.wlr + "*" + "   **||**   " + "__k/d Ratio__ : " + "*" + stats.player.stats.ranked.kd + "*",
+                            Value = "__w/l Ratio__ : " + "*" + stats.player.stats.ranked.wlr + "*" + "   **||**   " + "__k/d Ratio__ : " + "*" + stats.player.stats.ranked.kd + "*" + "   **||**   " + "__Temps de jeu__ : " + "*" + tempsRanked + "H*",
                             Inline = false
                         },
 
                         new DiscordEmbedField
                         {
                             Name = "Casual",
-                            Value = "__w/l Ratio__ : " + "*" + stats.player.stats.casual.wlr + "*" + "   **||**   " + "__k/d Ratio__ : " + "*" + stats.player.stats.casual.kd + "*",
+                            Value = "__w/l Ratio__ : " + "*" + stats.player.stats.casual.wlr + "*" + "   **||**   " + "__k/d Ratio__ : " + "*" + stats.player.stats.casual.kd + "*" + "   **||**   " + "__Temps de jeu__ : " + "*" + tempsCasual + "H*",
                             Inline = false
                         },
 
                         new DiscordEmbedField
                         {
                             Name = "Général",
-                            Value = "__HeadShots Ratio__ : " + "*" + headshotsRatio + "*" + "   **||**   " + "__Précision__ : " + "*" + precision + "*" + "   **||**   " + "__Distance__ : " + "*" + distance + "km*",
+                            Value = "__HeadShots Ratio__ : " + "*" + headshotsRatio + "*" + "   **||**   " + "__Précision__ : " + "*" + precision + "*" + "   **||**   " + "__Distance__ : " + "*" + distance + "km*" + "\n__Tués au CaC__ : " + "*" + stats.player.stats.overall.melee_kills + "*" + "   **||**   " + "__Réanimations__ : " + "*" + stats.player.stats.overall.revives + "*",
                             Inline = false
                         }
                     },
@@ -79,17 +82,156 @@ namespace BotDiscordStatRainbow
 
         }
         #endregion
-        public DiscordEmbed GetComparatif(string username1, string username2, string platform)
+        public DiscordEmbed GetComparatifRanked(string[] usernames, string platform)
         {
             var client = new RestSharp.RestClient("https://api.r6stats.com");
+
+            Dictionary<string, RestSharp.IRestResponse> reponses = new Dictionary<string, RestSharp.IRestResponse>();
+
+            foreach (string user in usernames)
+            {
+                var session = new RestRequest("/api/v1/players/" + user, Method.GET);
+                session.AddQueryParameter("platform", platform);
+                var reponse = client.Execute(session);
+                reponses.Add(user, reponse);
+            }
+
+
+
+            foreach (KeyValuePair<string, RestSharp.IRestResponse> entry in reponses)
+            {
+                
+                var reponseContent = entry.Value.Content;
+                if (reponseContent.Contains("failed")) {
+
+                    var erreur = JsonConvert.DeserializeObject<failRoot>(reponseContent);
+                    var embedErreur = new DiscordEmbed
+                    {
+                        Title = "Erreur " + erreur.errors[0].code,
+                        Description = "Le bot a rencontré une erreur : " + erreur.errors[0].detail,
+                        Color = 0x96211D
+                    };
+                    return embedErreur;
+                }
+            }
+
+            var descriptionEmbed = "";
+            foreach(KeyValuePair<string, RestSharp.IRestResponse> entry in reponses) {
+
+                descriptionEmbed = descriptionEmbed + " vs " + "**" + entry.Key + "**";
+
+            };
+
+            string ReplaceFirst(string text, string search, string replace)
+            {
+                int pos = text.IndexOf(search);
+                if (pos < 0)
+                {
+                    return text;
+                }
+                return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+            }
+
+            Dictionary<string, StatsRoot> jsonComp = new Dictionary<string, StatsRoot>();
+            foreach (string user in usernames)
+            {
+                var jsonuser = JsonConvert.DeserializeObject<StatsRoot>(reponses[user].Content);
+                jsonComp.Add(user, jsonuser);
+            }
+
+            Dictionary<string, double> wlrcomp = new Dictionary<string, double>();
+            foreach (string user in usernames)
+            {
+                var content = jsonComp[user];
+                var wlr = content.player.stats.ranked.wlr;
+                wlrcomp.Add(user, wlr);
+            }
+            var wlrText = "";
+            var kdrText = "";
+            var tempsText = "";
+            var indent = 1;
+            foreach (var item in wlrcomp.OrderByDescending(r => r.Value))
+            {
+                wlrText = wlrText + "**" + indent + "**. " + item.Key + " (*" + item.Value + "*)\n";
+                indent++;
+            }
+
+            Dictionary<string, double> kdrcomp = new Dictionary<string, double>();
+            foreach (string user in usernames)
+            {
+                var content = jsonComp[user];
+                var wlr = content.player.stats.ranked.kd;
+                kdrcomp.Add(user, wlr);
+            }
+
+            indent = 1;
+            foreach (var item in kdrcomp.OrderByDescending(r => r.Value))
+            {
+                kdrText = kdrText + "**" + indent + "**. " + item.Key + " (*" + item.Value + "*)\n";
+                indent++;
+            }
+
+            Dictionary<string, double> tempscomp = new Dictionary<string, double>();
+            foreach (string user in usernames)
+            {
+                var content = jsonComp[user];
+                var tempsRanked = Math.Round(((float)content.player.stats.ranked.playtime / 3600), 2);
+                tempscomp.Add(user, tempsRanked);
+            }
+
+            indent = 1;
+            foreach (var item in tempscomp.OrderByDescending(r => r.Value))
+            {
+                tempsText = tempsText + "**" + indent + "**. " + item.Key + " (*" + item.Value + "H*)\n";
+                indent++;
+            }
+
+            var embed = new DiscordEmbed
+            {
+                Title = "R6Stats / Ranked Comparatif",
+                Description = ReplaceFirst(descriptionEmbed," vs ",""),
+                Color = 0xB6B623,
+                Fields = new List<DiscordEmbedField>()
+                    {
+                        new DiscordEmbedField
+                        {
+                            Name = "Ratio Victoires/Défaites",
+                            Value = wlrText,
+                            Inline = false
+                        },
+
+                        new DiscordEmbedField
+                        {
+                            Name = "Ratio Tués/Morts",
+                            Value = kdrText,
+                            Inline = false
+                        },
+
+                        new DiscordEmbedField
+                        {
+                            Name = "Temps de jeu",
+                            Value = tempsText,
+                            Inline = false
+                        },
+                    }
+
+            };
+            return embed;
+
+
+
+
+
+            /*var client = new RestSharp.RestClient("https://api.r6stats.com");
             var sessionUser1 = new RestRequest("/api/v1/players/" + username1, Method.GET);
             sessionUser1.AddQueryParameter("platform", platform);
             var sessionUser2 = new RestRequest("/api/v1/players/" + username2, Method.GET);
             sessionUser2.AddQueryParameter("platform", platform);
             var reponseUser1 = client.Execute(sessionUser1);
             var reponseUser2 = client.Execute(sessionUser2);
+            */
 
-            if (reponseUser1.Content.Contains("failed"))
+            /*if (reponseUser1.Content.Contains("failed"))
             {
                 var erreurUser1 = JsonConvert.DeserializeObject<failRoot>(reponseUser1.Content);
                 var embed = new DiscordEmbed
@@ -151,7 +293,7 @@ namespace BotDiscordStatRainbow
 
                 };
                 return embed;
-            }
+            }*/
         }
         #region JSONParser
         public class failRoot

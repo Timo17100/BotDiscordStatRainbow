@@ -44,20 +44,15 @@ namespace BotDiscordStatRainbow
 
             var ccfg = new CommandsNextConfiguration
             {
-                // let's use the string prefix defined in config.json
                 StringPrefix = cfgjson.CommandPrefix,
 
-                // enable responding in direct messages
                 EnableDms = true,
 
-                // enable mentioning the bot as a command prefix
                 EnableMentionPrefix = true
             };
 
             this.Commands = this.Client.UseCommandsNext(ccfg);
 
-            // let's hook some command events, so we know what's 
-            // going on
             this.Commands.CommandExecuted += this.Commands_CommandExecuted;
             this.Commands.CommandErrored += this.Commands_CommandErrored;
 
@@ -69,70 +64,44 @@ namespace BotDiscordStatRainbow
         }
         private Task Client_Ready(ReadyEventArgs e)
         {
-            // let's log the fact that this event occured
             e.Client.DebugLogger.LogMessage(LogLevel.Info, "StatRainbow", "Client is ready to process events.", DateTime.Now);
 
-            // since this method is not async, let's return
-            // a completed task, so that no additional work
-            // is done
             return Task.CompletedTask;
         }
 
         private Task Client_GuildAvailable(GuildCreateEventArgs e)
         {
-            // let's log the name of the guild that was just
-            // sent to our client
             e.Client.DebugLogger.LogMessage(LogLevel.Info, "StatRainbow", $"Guild available: {e.Guild.Name}", DateTime.Now);
 
-            // since this method is not async, let's return
-            // a completed task, so that no additional work
-            // is done
             return Task.CompletedTask;
         }
 
         private Task Client_ClientError(ClientErrorEventArgs e)
         {
-            // let's log the name of the guild that was just
-            // sent to our client
             e.Client.DebugLogger.LogMessage(LogLevel.Error, "StatRainbow", $"Exception occured: {e.Exception.GetType()}: {e.Exception.Message}", DateTime.Now);
 
-            // since this method is not async, let's return
-            // a completed task, so that no additional work
-            // is done
             return Task.CompletedTask;
         }
         private Task Commands_CommandExecuted(CommandExecutedEventArgs e)
         {
-            // let's log the name of the guild that was just
-            // sent to our client
             e.Context.Client.DebugLogger.LogMessage(LogLevel.Info, "ExampleBot", $"{e.Context.User.Username} successfully executed '{e.Command.QualifiedName}'", DateTime.Now);
 
-            // since this method is not async, let's return
-            // a completed task, so that no additional work
-            // is done
             return Task.CompletedTask;
         }
 
         private async Task Commands_CommandErrored(CommandErrorEventArgs e)
         {
-            // let's log the name of the guild that was just
-            // sent to our client
             e.Context.Client.DebugLogger.LogMessage(LogLevel.Error, "ExampleBot", $"{e.Context.User.Username} tried executing '{e.Command?.QualifiedName ?? "<unknown command>"}' but it errored: {e.Exception.GetType()}: {e.Exception.Message ?? "<no message>"}", DateTime.Now);
 
-            // let's check if the error is a result of lack
-            // of required permissions
             if (e.Exception is ChecksFailedException ex)
             {
-                // yes, the user lacks required permissions, 
-                // let them know
 
                 var emoji = DiscordEmoji.FromName(e.Context.Client, ":no_entry:");
 
-                // let's wrap the response into an embed
                 var embed = new DiscordEmbed
                 {
                     Title = "Access denied",
-                    Description = $"{emoji} You do not have the permissions required to execute this command.",
+                    Description = $"{emoji} Vous n'avez pas la permission.",
                     Color = 0xFF0000 // red
                 };
                 await e.Context.RespondAsync("", embed: embed);
