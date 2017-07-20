@@ -146,10 +146,16 @@ namespace BotDiscordStatRainbow
                 var wlr = content.player.stats.ranked.wlr;
                 wlrcomp.Add(user, wlr);
             }
+
+
             var wlrText = "";
             var kdrText = "";
             var tempsText = "";
+            var killhourText = "";
             var indent = 1;
+
+
+
             foreach (var item in wlrcomp.OrderByDescending(r => r.Value))
             {
                 wlrText = wlrText + "**" + indent + "**. " + item.Key + " (*" + item.Value + "*)\n";
@@ -186,6 +192,21 @@ namespace BotDiscordStatRainbow
                 indent++;
             }
 
+            Dictionary<string, double> killhourcomp = new Dictionary<string, double>();
+            foreach (string user in usernames)
+            {
+                var content = jsonComp[user];
+                var killhourRanked = Math.Round(((float)content.player.stats.ranked.kills) / ((float)content.player.stats.ranked.playtime / 3600), 2);
+                killhourcomp.Add(user, killhourRanked);
+            }
+
+            indent = 1;
+            foreach (var item in killhourcomp.OrderByDescending(r => r.Value))
+            {
+                killhourText = killhourText + "**" + indent + "**. " + item.Key + " (*" + item.Value + "/H*)\n";
+                indent++;
+            }
+
             var embed = new DiscordEmbed
             {
                 Title = "R6Stats / Ranked Comparatif",
@@ -213,87 +234,17 @@ namespace BotDiscordStatRainbow
                             Value = tempsText,
                             Inline = false
                         },
-                    }
 
-            };
-            return embed;
-
-
-
-
-
-            /*var client = new RestSharp.RestClient("https://api.r6stats.com");
-            var sessionUser1 = new RestRequest("/api/v1/players/" + username1, Method.GET);
-            sessionUser1.AddQueryParameter("platform", platform);
-            var sessionUser2 = new RestRequest("/api/v1/players/" + username2, Method.GET);
-            sessionUser2.AddQueryParameter("platform", platform);
-            var reponseUser1 = client.Execute(sessionUser1);
-            var reponseUser2 = client.Execute(sessionUser2);
-            */
-
-            /*if (reponseUser1.Content.Contains("failed"))
-            {
-                var erreurUser1 = JsonConvert.DeserializeObject<failRoot>(reponseUser1.Content);
-                var embed = new DiscordEmbed
-                {
-                    Title = "Erreur" + erreurUser1.errors[0].code,
-                    Description = "Le bot a rencontré une erreur : " + erreurUser1.errors[0].detail,
-                    Color = 0x96211D
-                };
-                return embed;
-            }
-            else if (reponseUser2.Content.Contains("failed"))
-            {
-                var erreurUser2 = JsonConvert.DeserializeObject<failRoot>(reponseUser2.Content);
-                var embed = new DiscordEmbed
-                {
-                    Title = "Erreur" + erreurUser2.errors[0].code,
-                    Description = "Le bot a rencontré une erreur : " + erreurUser2.errors[0].detail,
-                    Color = 0x96211D
-                };
-                return embed;
-            }
-            else
-            {
-                var statsUser1 = JsonConvert.DeserializeObject<StatsRoot>(reponseUser1.Content);
-                var statsUser2 = JsonConvert.DeserializeObject<StatsRoot>(reponseUser2.Content);
-
-                var headshotsRatioUser1 = Math.Round(((float)statsUser1.player.stats.overall.headshots / ((float)statsUser1.player.stats.ranked.kills + (float)statsUser1.player.stats.casual.kills)), 3);
-                var precisionUser1 = Math.Round(((float)statsUser1.player.stats.overall.bullets_hit / (float)statsUser1.player.stats.overall.bullets_fired), 3);
-                var distanceUser1 = Math.Round(((statsUser1.player.stats.overall.steps_moved / 1.31233595801) / 1000), 2);
-
-                var headshotsRatioUser2 = Math.Round(((float)statsUser2.player.stats.overall.headshots / ((float)statsUser2.player.stats.ranked.kills + (float)statsUser2.player.stats.casual.kills)), 3);
-                var precisionUser2 = Math.Round(((float)statsUser2.player.stats.overall.bullets_hit / (float)statsUser2.player.stats.overall.bullets_fired), 3);
-                var distanceUser2 = Math.Round(((statsUser2.player.stats.overall.steps_moved / 1.31233595801) / 1000), 2);
-
-                string wlrRanked = "";
-                if (statsUser1.player.stats.ranked.wlr == statsUser2.player.stats.ranked.wlr) { wlrRanked = statsUser1.player.username + "(" + "*" + statsUser1.player.stats.ranked.wlr + "*" + ")" + " **=** " + statsUser2.player.username + "(" + "*" + statsUser2.player.stats.ranked.wlr + "*" + ")"; };
-                if (statsUser1.player.stats.ranked.wlr > statsUser2.player.stats.ranked.wlr) { wlrRanked = statsUser1.player.username + "(" + "*" + statsUser1.player.stats.ranked.wlr + "*" + ")" + " **>** " + statsUser2.player.username + "(" + "*" + statsUser2.player.stats.ranked.wlr + "*" + ")"; };
-                if (statsUser1.player.stats.ranked.wlr < statsUser2.player.stats.ranked.wlr) { wlrRanked = statsUser1.player.username + "(" + "*" + statsUser1.player.stats.ranked.wlr + "*" + ")" + " **<** " + statsUser2.player.username + "(" + "*" + statsUser2.player.stats.ranked.wlr + "*" + ")"; };
-
-                string kdRanked = "";
-                if (statsUser1.player.stats.ranked.kd == statsUser2.player.stats.ranked.kd) { kdRanked = statsUser1.player.username + "(" + "*" + statsUser1.player.stats.ranked.kd + "*" + ")" + " **=** " + statsUser2.player.username + "(" + "*" + statsUser2.player.stats.ranked.kd + "*" + ")"; };
-                if (statsUser1.player.stats.ranked.kd > statsUser2.player.stats.ranked.kd) { kdRanked = statsUser1.player.username + "(" + "*" + statsUser1.player.stats.ranked.kd + "*" + ")" + " **>** " + statsUser2.player.username + "(" + "*" + statsUser2.player.stats.ranked.kd + "*" + ")"; };
-                if (statsUser1.player.stats.ranked.kd < statsUser2.player.stats.ranked.kd) { kdRanked = statsUser1.player.username + "(" + "*" + statsUser1.player.stats.ranked.kd + "*" + ")" + " **<** " + statsUser2.player.username + "(" + "*" + statsUser2.player.stats.ranked.kd + "*" + ")"; };
-
-                var embed = new DiscordEmbed
-                {
-                    Title = "R6Stats",
-                    Description = "Comparatif entre " + statsUser1.player.username + " et " + statsUser2.player.username,
-                    Color = 0xB6B623,
-                    Fields = new List<DiscordEmbedField>()
-                    {
                         new DiscordEmbedField
                         {
-                            Name = "Ranked",
-                            Value = "__w/l Ratio__ : " + wlrRanked + "   **||**   " + "__k/d Ratio__ : " + kdRanked,
+                            Name = "Tués à l'heure",
+                            Value = killhourText,
                             Inline = false
                         },
                     }
 
-                };
-                return embed;
-            }*/
+            };
+            return embed;
         }
         #region JSONParser
         public class failRoot
